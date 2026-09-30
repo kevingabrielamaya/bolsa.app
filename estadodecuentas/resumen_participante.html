@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estado de Cuenta General - Bolsa de Confianza</title>
+  <!-- Librería para convertir la tabla/pantalla en imagen -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --primary: #4c7a48;
+      --accent: #e0a632;
+      --dark: #1a1a1a;
+      --light: #f8f9fa;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--light);
+      color: var(--dark);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 850px;
+      background: var(--white);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      border-top: 6px solid var(--primary);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+
+    .logo-title h1 {
+      font-size: 22px;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+
+    .logo-title p {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .info-header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 15px;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .info-card label {
+      font-size: 11px;
+      color: var(--white);
+      text-transform: uppercase;
+      display: block;
+    }
+
+    .info-card span {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* Tablas de Periodos y Movimientos */
+    .section-title {
+      font-size: 15px;
+      color: var(--primary);
+      margin: 20px 0 10px 0;
+      text-transform: uppercase;
+      border-left: 4px solid var(--accent);
+      padding-left: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+
+    th {
+      background-color: #f1f3f5;
+      color: var(--dark);
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+    }
+
+    .sub-row {
+      background-color: #f9fbf9;
+      font-size: 11px;
+    }
+
+    .sub-row td {
+      padding-left: 25px;
+      color: #555;
+    }
+
+    .badge-split {
+      background-color: var(--accent);
+      color: var(--dark);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 25px;
+      border-top: 1px solid #eee;
+      padding-top: 15px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary { background-color: var(--primary); color: var(--white); }
+    .btn-accent { background-color: var(--accent); color: var(--dark); }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; border-top: none; padding: 0; width: 100%; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" id="capture-area">
+    <header>
+      <div class="logo-title">
+        <h1>Bolsa de Confianza</h1>
+        <p>Estado de Cuenta General e Histórico</p>
+      </div>
+      <div class="info-card" style="text-align: right;">
+        <label>Fecha de Emisión</label>
+        <span id="p-fecha">-</span>
+      </div>
+    </header>
+
+    <div class="info-header">
+      <div class="info-card">
+        <label>Participante</label>
+        <span id="p-nombre">-</span>
+      </div>
+      <div class="info-card">
+        <label>Total Pagado (Histórico)</label>
+        <span id="p-total-pagado" style="color: var(--accent);">$0.00</span>
+      </div>
+    </div>
+
+    <!-- 1. RESUMEN POR PERIODOS -->
+    <div class="section-title">Resumen de Periodos / Cuotas</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Periodo</th>
+          <th>Monto Cuota</th>
+          <th>Abonado</th>
+          <th>Restante</th>
+          <th>Estatus</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-periodos">
+        <tr><td colspan="5" style="text-align:center;">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- 2. MOVIMIENTOS Y DESGLOSE DE PAGOS -->
+    <div class="section-title">Historial de Movimientos y Desglose</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha / Ref</th>
+          <th>Cuenta / Método</th>
+          <th>Monto Movimiento</th>
+          <th>Desglose / Asignación</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-movimientos">
+        <tr><td colspan="4" style="text-align:center;">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+
+    <div class="actions no-print">
+      <button class="btn btn-accent" onclick="copiarImagen()">📷 Copiar al portapapeles</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Descargar PDF / Imprimir</button>
+    </div>
+  </div>
+
+  <script>
+    function parseURLParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      document.getElementById('p-nombre').innerText = urlParams.get('nombre') || 'N/A';
+      document.getElementById('p-fecha').innerText = new Date().toLocaleDateString('es-ES');
+
+      // 1. Cargar Periodos (Formato: NombrePeriodo|Cuota|Abonado|Restante|Estatus ; ...)
+      const rawPeriodos = urlParams.get('periodos') || '';
+      const tbodyPeriodos = document.getElementById('tabla-periodos');
+      tbodyPeriodos.innerHTML = '';
+
+      if (rawPeriodos) {
+        rawPeriodos.split(';').forEach(item => {
+          if (!item.trim()) return;
+          const [periodo, cuota, abonado, restante, estatus] = item.split('|');
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><b>${periodo}</b></td>
+            <td>$${parseFloat(cuota).toFixed(2)}</td>
+            <td>$${parseFloat(abonado).toFixed(2)}</td>
+            <td>$${parseFloat(restante).toFixed(2)}</td>
+            <td><b>${estatus}</b></td>
+          `;
+          tbodyPeriodos.appendChild(tr);
+        });
+      } else {
+        tbodyPeriodos.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin periodos registrados.</td></tr>';
+      }
+
+      // 2. Cargar Movimientos y Pagos Divididos
+      // Formato: Fecha|Cuenta|Ref|MontoTotal|Pago1_Detalle,Pago2_Detalle ; ...
+      // Pago_Detalle: Participante:Periodo:Monto
+      const rawMovimientos = urlParams.get('movimientos') || '';
+      const tbodyMov = document.getElementById('tabla-movimientos');
+      tbodyMov.innerHTML = '';
+      let acumuladoTotal = 0;
+
+      if (rawMovimientos) {
+        rawMovimientos.split(';').forEach(mov => {
+          if (!mov.trim()) return;
+          const [fecha, cuenta, ref, montoTotal, pagosDesglose] = mov.split('|');
+          acumuladoTotal += parseFloat(montoTotal || 0);
+
+          const pagosList = pagosDesglose ? pagosDesglose.split(',') : [];
+          const esDividido = pagosList.length > 1;
+
+          // Fila del Movimiento Principal
+          const trMov = document.createElement('tr');
+          trMov.style.fontWeight = '600';
+          trMov.innerHTML = `
+            <td>${fecha}<br><small style="color:#666">${ref}</small></td>
+            <td>${cuenta}</td>
+            <td>$${parseFloat(montoTotal).toFixed(2)} ${esDividido ? '<span class="badge-split">Dividido</span>' : ''}</td>
+            <td>${esDividido ? 'Asignado a varios pagos:' : (pagosList[0] || 'Suelto')}</td>
+          `;
+          tbodyMov.appendChild(trMov);
+
+          // Si el movimiento tiene más de 1 pago (Dividido), mostramos las sub-filas
+          if (esDividido) {
+            pagosList.forEach(pago => {
+              const trSub = document.createElement('tr');
+              trSub.className = 'sub-row';
+              trSub.innerHTML = `
+                <td colspan="3">↳ <i>${pago}</i></td>
+                <td><b>Abonado a esta cuota</b></td>
+              `;
+              tbodyMov.appendChild(trSub);
+            });
+          }
+        });
+      } else {
+        tbodyMov.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sin movimientos registrados.</td></tr>';
+      }
+
+      document.getElementById('p-total-pagado').innerText = `$${acumuladoTotal.toFixed(2)}`;
+    }
+
+    // Copiar captura de la tabla directamente al portapapeles
+    async function copiarImagen() {
+      const captureArea = document.getElementById('capture-area');
+      const buttons = document.querySelector('.no-print');
+      
+      buttons.style.display = 'none'; // Ocultar botones temporalmente
+
+      try {
+        const canvas = await html2canvas(captureArea, { scale: 2 });
+        canvas.toBlob(async (blob) => {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob })
+            ]);
+            alert('✅ ¡Captura copiada al portapapeles! Ahora puedes ir a WhatsApp y presionar "Pegar" (Ctrl+V).');
+          } catch (err) {
+            alert('⚠️ Tu navegador no permitió copiar la imagen directamente. Se descargará como archivo.');
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `Estado_de_Cuenta.png`;
+            a.click();
+          }
+        });
+      } catch (e) {
+        alert('Error al generar la imagen.');
+      } finally {
+        buttons.style.display = 'flex'; // Volver a mostrar botones
+      }
+    }
+
+    window.onload = parseURLParams;
+  </script>
+</body>
+</html>
