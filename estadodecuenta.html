@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estado de Cuenta - Bolsa de Confianza</title>
+    <link rel="icon" type="image/png" href="/image/favicon.jpg">
+    
+    <!-- Librería para capturar el contenedor como imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
         :root {
-            --primary-color: #4c7a48;
+            --primary-color: #4c7a48; /* Verde oscuro elegante */
             --bg-color: #f3f4f6;
             --text-main: #1f2937;
             --text-muted: #6b7280;
@@ -24,7 +29,8 @@
             margin: 0;
             padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
         }
 
         .container {
@@ -34,6 +40,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+            margin-bottom: 20px;
         }
 
         .header {
@@ -69,26 +76,72 @@
         
         .monto-col { text-align: right; font-weight: 500; }
         
-        /* Estilos de estado (Badge) */
         .badge { padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block;}
         .badge.solvente { background-color: var(--solvente-bg); color: var(--solvente-text); }
         .badge.pendiente { background-color: var(--pendiente-bg); color: var(--pendiente-text); }
 
-        /* Estilo para los agrupadores en la tabla de detalles */
-        .fila-grupo td { background-color: #f3f4f6; font-weight: bold; color: #374151; border-top: 2px solid #d1d5db; }
+        .fila-grupo td { background-color: var(--primary-color); font-weight: bold; color: white; border-top: 2px solid #d1d5db; }
         
         .sin-datos { text-align: center; padding: 20px; color: var(--text-muted); font-style: italic; display: none; }
         .footer { text-align: center; padding: 15px; font-size: 0.8rem; color: var(--text-muted); background-color: #f9fafb; }
 
+        /* Estilos de botones de acción */
+        .acciones-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { background-color: #456941; }
+        .btn-outline { background-color: white; color: var(--primary-color); border: 2px solid var(--primary-color); }
+        .btn-outline:hover { background-color: #f0fdfa; }
+
         @media (max-width: 500px) {
             th, td { padding: 8px 4px; }
             .badge { font-size: 0.65rem; }
+            .acciones-container { flex-direction: column; width: 100%; max-width: 700px; }
+            .btn { justify-content: center; width: 100%; }
+        }
+
+        /* Ocultar elementos al imprimir o capturar */
+        @media print {
+            body { background-color: white; padding: 0; }
+            .container { box-shadow: none; margin: 0; max-width: 100%; border: none; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <!-- Botones de Acción (No se verán en PDF ni en Imagen) -->
+    <div class="acciones-container no-print">
+        <button class="btn" id="btn-copiar" onclick="copiarImagen()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Copiar como Imagen
+        </button>
+        <button class="btn btn-outline" onclick="window.print()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Guardar PDF / Imprimir
+        </button>
+    </div>
+
+    <!-- Contenedor del Estado de Cuenta -->
+    <div class="container" id="estado-cuenta">
         <div class="header">
             <h1>Estado de Cuenta</h1>
             <p id="bolsa-nombre">Bolsa de Confianza</p>
@@ -100,7 +153,7 @@
                 <span class="dato-valor" id="participante-nombre">Cargando...</span>
             </div>
             <div class="dato-box">
-                <span class="dato-label">Turno(s)</span>
+                <span class="dato-label">Turno(s) asignado(s)</span>
                 <span class="dato-valor" id="participante-turnos">-</span>
             </div>
             <div class="dato-box" style="grid-column: span 2;">
@@ -116,7 +169,7 @@
                 <thead>
                     <tr>
                         <th>Período</th>
-                        <th class="monto-col">Cuota Esperada</th>
+                        <th class="monto-col">Cuota Total</th>
                         <th class="monto-col">Abonado</th>
                         <th>Estado</th>
                     </tr>
@@ -134,7 +187,7 @@
                 <thead>
                     <tr>
                         <th>Fecha</th>
-                        <th>Método</th>
+                        <th>Forma de pago</th>
                         <th class="monto-col">Bs.</th>
                         <th class="monto-col">$</th>
                     </tr>
@@ -149,20 +202,26 @@
     </div>
 
     <script>
+        // Lógica de llenado de datos
         document.addEventListener("DOMContentLoaded", () => {
             const params = new URLSearchParams(window.location.search);
             
             const nombre = params.get('nombre');
             const bolsa = params.get('bolsa');
-            const turnos = params.get('turnos');
+            const turnosStr = params.get('turnos');
             const pagosStr = params.get('pagos');
 
             if(nombre) document.getElementById('participante-nombre').textContent = nombre;
             if(bolsa) document.getElementById('bolsa-nombre').textContent = bolsa;
-            if(turnos) document.getElementById('participante-turnos').textContent = turnos;
+            if(turnosStr) document.getElementById('participante-turnos').textContent = turnosStr;
+
+            // Calcular cantidad de turnos (Ej: "3, 4" -> 2 turnos. Si está vacío, asume 1)
+            let numTurnos = 1;
+            if (turnosStr && turnosStr.trim() !== "") {
+                numTurnos = turnosStr.split(',').length;
+            }
 
             let totalGlobalAbonado = 0;
-            // Usaremos un Map para agrupar todos los pagos por nombre de período
             const periodosData = new Map();
 
             if (pagosStr && pagosStr.trim() !== "") {
@@ -172,7 +231,10 @@
                     const partes = pago.split('|');
                     if (partes.length === 6) {
                         const periodoNombre = partes[0].trim();
-                        const cuota = parseFloat(partes[1].trim()) || 0;
+                        // MULTIPLICAMOS la cuota base por la cantidad de turnos del participante
+                        const cuotaBase = parseFloat(partes[1].trim()) || 0;
+                        const cuotaMultiplicada = cuotaBase * numTurnos; 
+                        
                         const fecha = partes[2].trim();
                         const metodo = partes[3].trim();
                         const dolares = parseFloat(partes[4].trim()) || 0;
@@ -180,32 +242,27 @@
 
                         totalGlobalAbonado += dolares;
 
-                        // Si el período no existe en el mapa, lo creamos
                         if (!periodosData.has(periodoNombre)) {
                             periodosData.set(periodoNombre, {
-                                cuota: cuota,
+                                cuota: cuotaMultiplicada,
                                 totalAbonado: 0,
                                 pagos: []
                             });
                         }
 
-                        // Agregamos el pago actual al período correspondiente
                         const periodoObj = periodosData.get(periodoNombre);
                         periodoObj.totalAbonado += dolares;
                         periodoObj.pagos.push({ fecha, metodo, dolares, bolivares });
                     }
                 });
 
-                // Imprimir el Total General
                 document.getElementById('participante-abonado').textContent = `$${totalGlobalAbonado.toFixed(2)}`;
 
                 const tbodyResumen = document.getElementById('tabla-resumen-body');
                 const tbodyAportes = document.getElementById('tabla-aportes-body');
 
-                // Iterar sobre los datos agrupados para construir ambas tablas
                 periodosData.forEach((datos, nombrePeriodo) => {
                     
-                    // --- 1. CONSTRUIR FILA PARA TABLA RESUMEN ---
                     const restante = datos.cuota - datos.totalAbonado;
                     let badgeHTML = '';
                     if (restante <= 0) {
@@ -223,8 +280,6 @@
                     `;
                     tbodyResumen.appendChild(filaResumen);
 
-                    // --- 2. CONSTRUIR FILAS PARA TABLA DETALLES (Agrupadas) ---
-                    // Fila del título del período (Subtotal)
                     const filaGrupo = document.createElement('tr');
                     filaGrupo.className = 'fila-grupo';
                     filaGrupo.innerHTML = `
@@ -233,13 +288,12 @@
                     `;
                     tbodyAportes.appendChild(filaGrupo);
 
-                    // Filas de los pagos individuales de ese período
                     datos.pagos.forEach(pago => {
                         const filaPago = document.createElement('tr');
                         filaPago.innerHTML = `
                             <td>${pago.fecha}</td>
                             <td>${pago.metodo}</td>
-                            <td class="monto-col">${pago.bolivares > 0 ? pago.bolivares.toLocaleString('es-VE') : '-'}</td>
+                            <td class="monto-col">${pago.bolivares > 0 ? 'Bs. ' + pago.bolivares.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
                             <td class="monto-col">$${pago.dolares.toFixed(2)}</td>
                         `;
                         tbodyAportes.appendChild(filaPago);
@@ -251,6 +305,42 @@
                 document.getElementById('mensaje-vacio-aportes').style.display = "block";
             }
         });
+
+        // Función para copiar como imagen al portapapeles usando html2canvas
+        async function copiarImagen() {
+            const btn = document.getElementById('btn-copiar');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = '⏳ Procesando...';
+            
+            try {
+                const contenedor = document.getElementById('estado-cuenta');
+                
+                // Generar el canvas a partir del contenedor
+                const canvas = await html2canvas(contenedor, {
+                    scale: 2, // Mejor calidad de imagen
+                    backgroundColor: '#ffffff' // Fondo blanco asegurado
+                });
+
+                // Convertir canvas a Blob y enviar al portapapeles
+                canvas.toBlob(async function(blob) {
+                    try {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        btn.innerHTML = '✅ ¡Copiado con éxito!';
+                        setTimeout(() => btn.innerHTML = textoOriginal, 3000);
+                    } catch (err) {
+                        console.error('Error del portapapeles:', err);
+                        alert('Tu navegador o dispositivo bloqueó el acceso al portapapeles. Intenta desde PC o usa el botón de PDF.');
+                        btn.innerHTML = textoOriginal;
+                    }
+                }, 'image/png');
+                
+            } catch (error) {
+                console.error('Error al generar imagen:', error);
+                alert('Ocurrió un error al intentar crear la imagen.');
+                btn.innerHTML = textoOriginal;
+            }
+        }
     </script>
 </body>
 </html>
