@@ -6,11 +6,15 @@
     <title>Estado de Cuenta - Bolsa de Confianza</title>
     <style>
         :root {
-            --primary-color: #0f766e; /* Verde oscuro elegante */
+            --primary-color: #4c7a48;
             --bg-color: #f3f4f6;
             --text-main: #1f2937;
             --text-muted: #6b7280;
             --border-color: #e5e7eb;
+            --solvente-bg: #dcfce7;
+            --solvente-text: #166534;
+            --pendiente-bg: #fef9c3;
+            --pendiente-text: #854d0e;
         }
 
         body {
@@ -25,7 +29,7 @@
 
         .container {
             background-color: #ffffff;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -39,16 +43,8 @@
             text-align: center;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        .header p {
-            margin: 5px 0 0 0;
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        .header p { margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9rem; }
 
         .resumen-grid {
             padding: 20px;
@@ -58,121 +54,80 @@
             border-bottom: 2px dashed var(--border-color);
         }
 
-        .dato-box {
-            display: flex;
-            flex-direction: column;
-        }
+        .dato-box { display: flex; flex-direction: column; }
+        .dato-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: bold; margin-bottom: 4px; }
+        .dato-valor { font-size: 1rem; font-weight: 500; }
+        .dato-total { color: var(--primary-color); font-size: 1.25rem; font-weight: 700; }
 
-        .dato-box.full-width {
-            grid-column: span 2;
-        }
+        .seccion-tabla { padding: 20px; border-bottom: 1px solid var(--border-color); }
+        .seccion-tabla:last-child { border-bottom: none; }
+        .seccion-tabla h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: var(--text-main); }
 
-        .dato-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { background-color: #f9fafb; color: var(--text-muted); font-weight: 600; text-align: left; padding: 10px; border-bottom: 1px solid var(--border-color); }
+        td { padding: 10px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        
+        .monto-col { text-align: right; font-weight: 500; }
+        
+        /* Estilos de estado (Badge) */
+        .badge { padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block;}
+        .badge.solvente { background-color: var(--solvente-bg); color: var(--solvente-text); }
+        .badge.pendiente { background-color: var(--pendiente-bg); color: var(--pendiente-text); }
 
-        .dato-valor {
-            font-size: 1rem;
-            font-weight: 500;
-        }
+        /* Estilo para los agrupadores en la tabla de detalles */
+        .fila-grupo td { background-color: #f3f4f6; font-weight: bold; color: #374151; border-top: 2px solid #d1d5db; }
+        
+        .sin-datos { text-align: center; padding: 20px; color: var(--text-muted); font-style: italic; display: none; }
+        .footer { text-align: center; padding: 15px; font-size: 0.8rem; color: var(--text-muted); background-color: #f9fafb; }
 
-        .dato-total {
-            color: var(--primary-color);
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
-
-        .seccion-tabla {
-            padding: 20px;
-        }
-
-        .seccion-tabla h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-            color: var(--text-main);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        th {
-            background-color: #f9fafb;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        td {
-            padding: 12px 10px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-main);
-        }
-
-        .monto-col {
-            text-align: right;
-            font-weight: 500;
-        }
-
-        /* Mensaje cuando no hay datos */
-        .sin-datos {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 15px;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            background-color: #f9fafb;
+        @media (max-width: 500px) {
+            th, td { padding: 8px 4px; }
+            .badge { font-size: 0.65rem; }
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Encabezado -->
         <div class="header">
             <h1>Estado de Cuenta</h1>
             <p id="bolsa-nombre">Bolsa de Confianza</p>
         </div>
 
-        <!-- Resumen del Participante -->
         <div class="resumen-grid">
-            <div class="dato-box full-width">
+            <div class="dato-box">
                 <span class="dato-label">Participante</span>
                 <span class="dato-valor" id="participante-nombre">Cargando...</span>
             </div>
-            
             <div class="dato-box">
                 <span class="dato-label">Turno(s)</span>
                 <span class="dato-valor" id="participante-turnos">-</span>
             </div>
-
-            <div class="dato-box">
-                <span class="dato-label">Total Abonado</span>
+            <div class="dato-box" style="grid-column: span 2;">
+                <span class="dato-label">Total Histórico Abonado</span>
                 <span class="dato-total" id="participante-abonado">$0.00</span>
-            </div>
-
-            <div class="dato-box full-width">
-                <span class="dato-label">Períodos Asignados</span>
-                <span class="dato-valor" id="participante-periodos">-</span>
             </div>
         </div>
 
-        <!-- Historial de Pagos -->
+        <!-- TABLA 1: Resumen por Mes/Período -->
+        <div class="seccion-tabla">
+            <h3>Resumen por Períodos Abonados</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Período</th>
+                        <th class="monto-col">Cuota Esperada</th>
+                        <th class="monto-col">Abonado</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-resumen-body">
+                </tbody>
+            </table>
+            <div id="mensaje-vacio-resumen" class="sin-datos">No hay períodos registrados.</div>
+        </div>
+
+        <!-- TABLA 2: Detalles Agrupados -->
         <div class="seccion-tabla">
             <h3>Detalle de Aportes</h3>
             <table>
@@ -184,81 +139,116 @@
                         <th class="monto-col">$</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-body">
-                    <!-- Las filas se insertarán aquí con JavaScript -->
+                <tbody id="tabla-aportes-body">
                 </tbody>
             </table>
-            <div id="mensaje-vacio" class="sin-datos" style="display: none;">
-                No hay aportes registrados aún.
-            </div>
+            <div id="mensaje-vacio-aportes" class="sin-datos">No hay aportes registrados.</div>
         </div>
 
-        <!-- Pie de página -->
-        <div class="footer">
-            Generado automáticamente • Bolsa de Confianza
-        </div>
+        <div class="footer">Generado automáticamente • Bolsa de Confianza</div>
     </div>
 
-    <!-- SCRIPT PARA LEER LA URL Y LLENAR LOS DATOS -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            // Obtener los parámetros de la URL enviados desde AppSheet
             const params = new URLSearchParams(window.location.search);
             
             const nombre = params.get('nombre');
             const bolsa = params.get('bolsa');
             const turnos = params.get('turnos');
-            const abonado = params.get('abonado');
-            const periodos = params.get('periodos');
             const pagosStr = params.get('pagos');
 
-            // 1. Llenar los datos de la cabecera si existen
             if(nombre) document.getElementById('participante-nombre').textContent = nombre;
             if(bolsa) document.getElementById('bolsa-nombre').textContent = bolsa;
             if(turnos) document.getElementById('participante-turnos').textContent = turnos;
-            if(periodos) document.getElementById('participante-periodos').textContent = periodos;
-            
-            // Formatear el total abonado con 2 decimales
-            if(abonado) {
-                const totalNum = parseFloat(abonado);
-                if(!isNaN(totalNum)) {
-                    document.getElementById('participante-abonado').textContent = `$${totalNum.toFixed(2)}`;
-                }
-            }
 
-            // 2. Procesar la cadena de pagos para la tabla
-            const tbody = document.getElementById('tabla-body');
-            const mensajeVacio = document.getElementById('mensaje-vacio');
+            let totalGlobalAbonado = 0;
+            // Usaremos un Map para agrupar todos los pagos por nombre de período
+            const periodosData = new Map();
 
             if (pagosStr && pagosStr.trim() !== "") {
-                // Separar cada pago por el punto y coma ";"
                 const listaPagos = pagosStr.split(';');
                 
                 listaPagos.forEach(pago => {
-                    // Separar los detalles del pago por la barra "|"
-                    const detalles = pago.split('|');
-                    
-                    // Asegurarnos de que el pago tiene las 4 partes esperadas (Fecha, Forma, Monto$, MontoBs)
-                    if (detalles.length === 4) {
-                        const fecha = detalles[0].trim();
-                        const formaPago = detalles[1].trim();
-                        const montoDolares = parseFloat(detalles[2].trim()) || 0;
-                        const montoBolivares = parseFloat(detalles[3].trim()) || 0;
+                    const partes = pago.split('|');
+                    if (partes.length === 6) {
+                        const periodoNombre = partes[0].trim();
+                        const cuota = parseFloat(partes[1].trim()) || 0;
+                        const fecha = partes[2].trim();
+                        const metodo = partes[3].trim();
+                        const dolares = parseFloat(partes[4].trim()) || 0;
+                        const bolivares = parseFloat(partes[5].trim()) || 0;
 
-                        // Crear la fila HTML
-                        const fila = document.createElement('tr');
-                        fila.innerHTML = `
-                            <td>${fecha}</td>
-                            <td>${formaPago}</td>
-                            <td class="monto-col">${montoBolivares > 0 ? montoBolivares.toLocaleString('es-VE') : '-'}</td>
-                            <td class="monto-col">$${montoDolares.toFixed(2)}</td>
-                        `;
-                        tbody.appendChild(fila);
+                        totalGlobalAbonado += dolares;
+
+                        // Si el período no existe en el mapa, lo creamos
+                        if (!periodosData.has(periodoNombre)) {
+                            periodosData.set(periodoNombre, {
+                                cuota: cuota,
+                                totalAbonado: 0,
+                                pagos: []
+                            });
+                        }
+
+                        // Agregamos el pago actual al período correspondiente
+                        const periodoObj = periodosData.get(periodoNombre);
+                        periodoObj.totalAbonado += dolares;
+                        periodoObj.pagos.push({ fecha, metodo, dolares, bolivares });
                     }
                 });
+
+                // Imprimir el Total General
+                document.getElementById('participante-abonado').textContent = `$${totalGlobalAbonado.toFixed(2)}`;
+
+                const tbodyResumen = document.getElementById('tabla-resumen-body');
+                const tbodyAportes = document.getElementById('tabla-aportes-body');
+
+                // Iterar sobre los datos agrupados para construir ambas tablas
+                periodosData.forEach((datos, nombrePeriodo) => {
+                    
+                    // --- 1. CONSTRUIR FILA PARA TABLA RESUMEN ---
+                    const restante = datos.cuota - datos.totalAbonado;
+                    let badgeHTML = '';
+                    if (restante <= 0) {
+                        badgeHTML = `<span class="badge solvente">✅ SÓLVENTE</span>`;
+                    } else {
+                        badgeHTML = `<span class="badge pendiente">⏳ DEBE $${restante.toFixed(2)}</span>`;
+                    }
+
+                    const filaResumen = document.createElement('tr');
+                    filaResumen.innerHTML = `
+                        <td><strong>${nombrePeriodo}</strong></td>
+                        <td class="monto-col">$${datos.cuota.toFixed(2)}</td>
+                        <td class="monto-col">$${datos.totalAbonado.toFixed(2)}</td>
+                        <td>${badgeHTML}</td>
+                    `;
+                    tbodyResumen.appendChild(filaResumen);
+
+                    // --- 2. CONSTRUIR FILAS PARA TABLA DETALLES (Agrupadas) ---
+                    // Fila del título del período (Subtotal)
+                    const filaGrupo = document.createElement('tr');
+                    filaGrupo.className = 'fila-grupo';
+                    filaGrupo.innerHTML = `
+                        <td colspan="3">${nombrePeriodo}</td>
+                        <td class="monto-col">Subtotal: $${datos.totalAbonado.toFixed(2)}</td>
+                    `;
+                    tbodyAportes.appendChild(filaGrupo);
+
+                    // Filas de los pagos individuales de ese período
+                    datos.pagos.forEach(pago => {
+                        const filaPago = document.createElement('tr');
+                        filaPago.innerHTML = `
+                            <td>${pago.fecha}</td>
+                            <td>${pago.metodo}</td>
+                            <td class="monto-col">${pago.bolivares > 0 ? pago.bolivares.toLocaleString('es-VE') : '-'}</td>
+                            <td class="monto-col">$${pago.dolares.toFixed(2)}</td>
+                        `;
+                        tbodyAportes.appendChild(filaPago);
+                    });
+                });
+
             } else {
-                // Si no hay pagos, mostramos el mensaje de que está vacío
-                mensajeVacio.style.display = "block";
+                document.getElementById('mensaje-vacio-resumen').style.display = "block";
+                document.getElementById('mensaje-vacio-aportes').style.display = "block";
             }
         });
     </script>
